@@ -22,9 +22,14 @@ async function run() {
     // await client.connect();
 
     const courseData = client.db("summerCamp").collection("courses");
+    const teacherData = client.db("summerCamp").collection("teachers");
 
     app.get("/courses", async (req, res) => {
       const result = await courseData.find().toArray();
+      res.send(result);
+    });
+    app.get("/teachers", async (req, res) => {
+      const result = await teacherData.find().toArray();
       res.send(result);
     });
 
