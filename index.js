@@ -25,12 +25,22 @@ async function run() {
     const teacherData = client.db("summerCamp").collection("teachers");
 
     app.get("/courses", async (req, res) => {
-      const result = await courseData.find().toArray();
+      sortBy = { student_enroll: -1 };
+      const result = await courseData.find().sort(sortBy).toArray();
       res.send(result);
     });
     app.get("/teachers", async (req, res) => {
       const result = await teacherData.find().toArray();
       res.send(result);
+    });
+
+    app.get("/teacher", async (req, res) => {
+      let query = {};
+      if (req.query?.user) {
+        query = { email: req.query.user };
+      }
+      const results = await teacherData.find(query).toArray();
+      res.send(results);
     });
 
     await client.db("admin").command({ ping: 1 });
