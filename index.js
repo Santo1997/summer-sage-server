@@ -20,15 +20,17 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // await client.connect();
-
     const courseData = client.db("summerCamp").collection("courses");
     const userData = client.db("summerCamp").collection("users");
 
+    //get course data
     app.get("/courses", async (req, res) => {
       sortBy = { student_enroll: -1 };
       const result = await courseData.find().sort(sortBy).toArray();
       res.send(result);
     });
+
+    //get teacher data
     app.get("/teachers", async (req, res) => {
       let query = { user: "instractor" };
       const result = await userData.find(query).toArray();
@@ -44,12 +46,19 @@ async function run() {
       res.send(results);
     });
 
+    //post all user data
     app.post("/allusers", async (req, res) => {
       const newUser = req.body;
+      const query = { email: newUser.email };
+      const existingUser = await userData.findOne(query);
+      if (existingUser) {
+        return res.send(existingUser);
+      }
       const result = await userData.insertOne(newUser);
       res.send(result);
     });
 
+    //etc
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
