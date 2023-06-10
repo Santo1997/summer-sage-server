@@ -22,7 +22,7 @@ async function run() {
     // await client.connect();
 
     const courseData = client.db("summerCamp").collection("courses");
-    const teacherData = client.db("summerCamp").collection("teachers");
+    const userData = client.db("summerCamp").collection("users");
 
     app.get("/courses", async (req, res) => {
       sortBy = { student_enroll: -1 };
@@ -30,7 +30,8 @@ async function run() {
       res.send(result);
     });
     app.get("/teachers", async (req, res) => {
-      const result = await teacherData.find().toArray();
+      let query = { user: "instractor" };
+      const result = await userData.find(query).toArray();
       res.send(result);
     });
 
@@ -39,8 +40,14 @@ async function run() {
       if (req.query?.user) {
         query = { email: req.query.user };
       }
-      const results = await teacherData.find(query).toArray();
+      const results = await userData.find(query).toArray();
       res.send(results);
+    });
+
+    app.post("/allusers", async (req, res) => {
+      const newUser = req.body;
+      const result = await userData.insertOne(newUser);
+      res.send(result);
     });
 
     await client.db("admin").command({ ping: 1 });
