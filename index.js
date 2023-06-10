@@ -22,6 +22,7 @@ async function run() {
     // await client.connect();
     const courseData = client.db("summerCamp").collection("courses");
     const userData = client.db("summerCamp").collection("users");
+    const cartData = client.db("summerCamp").collection("carts");
 
     //get course data
     app.get("/courses", async (req, res) => {
@@ -55,6 +56,19 @@ async function run() {
         return res.send(existingUser);
       }
       const result = await userData.insertOne(newUser);
+      res.send(result);
+    });
+
+    //post cart data
+    app.post("/carts", async (req, res) => {
+      const cartItm = req.body;
+
+      const query = { langId: cartItm.langId };
+      const existingCart = await cartData.findOne(query);
+      if (existingCart) {
+        return res.send(existingCart);
+      }
+      const result = await cartData.insertOne(cartItm);
       res.send(result);
     });
 
