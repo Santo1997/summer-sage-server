@@ -59,8 +59,8 @@ async function run() {
       res.send(result);
     });
 
-    //post cart data
-    app.post("/carts", async (req, res) => {
+    // cart data
+    app.post("/cart", async (req, res) => {
       const cartItm = req.body;
 
       const query = { langId: cartItm.langId };
@@ -70,6 +70,17 @@ async function run() {
       }
       const result = await cartData.insertOne(cartItm);
       res.send(result);
+    });
+
+    app.get("/carts", async (req, res) => {
+      let query = {};
+      if (req.query?.user) {
+        query = { user: req.query.user };
+      } else {
+        res.send([]);
+      }
+      const results = await cartData.find(query).toArray();
+      res.send(results);
     });
 
     //etc
