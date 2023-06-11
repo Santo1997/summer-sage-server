@@ -68,6 +68,16 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/userCourses", verifyJWT, async (req, res) => {
+      let query = {};
+      console.log(query);
+      if (req.query?.user) {
+        query = { "course_teacher.email": req.query.user };
+      }
+      const result = await courseData.find(query).toArray();
+      res.send(result);
+    });
+
     app.post("/course", async (req, res) => {
       const newCls = req.body;
       const query = { course_name: newCls.course_name };
