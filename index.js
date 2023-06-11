@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const verrifyJWT = (req, req, next) => {
+const verrifyJWT = (req, res, next) => {
   const authorized = req.headers.authorization;
   if (!authorized) {
     return res.status(401).send({ error: true, message: "unauthorized" });
@@ -47,8 +47,18 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
         expiresIn: "1h",
       });
-      res.send(token);
+      res.send({ token });
     });
+
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userData.findOne(query);
+      if (user?.role !== "admin") {
+        return res.status(403).send({ error: true, message: "forbidden" });
+      }
+      next();
+    };
 
     //get course data
     app.get("/courses", async (req, res) => {
@@ -57,9 +67,15 @@ async function run() {
       res.send(result);
     });
 
+    //get user data
+    app.get("/users", verrifyJWT, verifyAdmin, async (req, res) => {
+      const result = await userData.find().toArray();
+      res.send(result);
+    });
+
     //get teacher data
     app.get("/teachers", async (req, res) => {
-      let query = { user: "instractor" };
+      let query = { role: "instractor" };
       const result = await userData.find(query).toArray();
       res.send(result);
     });
@@ -98,7 +114,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/carts", async (req, res) => {
+    app.get("/carts", verifyJWT, async (req, res) => {
       let query = {};
       if (req.query?.user) {
         query = { user: req.query.user };
