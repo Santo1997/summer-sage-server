@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const verrifyJWT = (req, res, next) => {
+const verifyJWT = (req, res, next) => {
   const authorized = req.headers.authorization;
   if (!authorized) {
     return res.status(401).send({ error: true, message: "unauthorized" });
@@ -45,7 +45,7 @@ async function run() {
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
-        expiresIn: "1h",
+        expiresIn: "5h",
       });
       res.send({ token });
     });
@@ -68,7 +68,7 @@ async function run() {
     });
 
     //get user data
-    app.get("/users", verrifyJWT, verifyAdmin, async (req, res) => {
+    app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await userData.find().toArray();
       res.send(result);
     });
@@ -105,7 +105,7 @@ async function run() {
     app.post("/cart", async (req, res) => {
       const cartItm = req.body;
 
-      const query = { langId: cartItm.langId };
+      const query = { langId: cartItm.langId, user: cartItm.user };
       const existingCart = await cartData.findOne(query);
       if (existingCart) {
         return res.send(existingCart);
@@ -123,6 +123,13 @@ async function run() {
       }
       const results = await cartData.find(query).toArray();
       res.send(results);
+    });
+
+    app.delete("/carts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const toy = await cartData.deleteOne(query);
+      res.send(toy);
     });
 
     //etc
