@@ -68,6 +68,30 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/courses/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await courseData.findOne(query);
+      res.send(result);
+    });
+
+    app.put("/updateCourses/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const option = { upsert: true };
+      const updateCls = req.body;
+      const setCls = {
+        $set: {
+          course_price: updateCls.course_price,
+          available_seats: updateCls.available_seats,
+          description: updateCls.description,
+        },
+      };
+
+      const result = await courseData.updateOne(filter, setCls, option);
+      res.send(result);
+    });
+
     app.get("/userCourses", verifyJWT, async (req, res) => {
       let query = {};
       console.log(query);
