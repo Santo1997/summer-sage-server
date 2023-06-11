@@ -62,8 +62,20 @@ async function run() {
 
     //get course data
     app.get("/courses", async (req, res) => {
+      let query = { status: "confirm" };
       sortBy = { student_enroll: -1 };
-      const result = await courseData.find().sort(sortBy).toArray();
+      const result = await courseData.find(query).sort(sortBy).toArray();
+      res.send(result);
+    });
+
+    app.post("/course", async (req, res) => {
+      const newCls = req.body;
+      const query = { course_name: newCls.course_name };
+      const existingCls = await courseData.findOne(query);
+      if (existingCls) {
+        return res.send(existingCls);
+      }
+      const result = await courseData.insertOne(newCls);
       res.send(result);
     });
 
