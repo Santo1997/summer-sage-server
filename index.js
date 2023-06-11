@@ -1,7 +1,8 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
-var cors = require("cors");
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -23,6 +24,15 @@ async function run() {
     const courseData = client.db("summerCamp").collection("courses");
     const userData = client.db("summerCamp").collection("users");
     const cartData = client.db("summerCamp").collection("carts");
+
+    //jwt access
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, env.process.ACCESS_TOKEN, {
+        expiresIn: "1h",
+      });
+      res.send(token);
+    });
 
     //get course data
     app.get("/courses", async (req, res) => {
