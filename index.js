@@ -67,7 +67,7 @@ async function run() {
     });
 
     app.get("/courses", async (req, res) => {
-      let query = { status: "confirm" };
+      let query = { status: "approved" };
       sortBy = { student_enroll: -1 };
       const result = await courseData.find(query).sort(sortBy).toArray();
       res.send(result);
@@ -80,19 +80,33 @@ async function run() {
       res.send(result);
     });
 
-    app.put("/updateStatus/:id", verifyJWT, async (req, res) => {
+    app.put("/updateValue/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const option = { upsert: true };
-      const updateStatus = req.body;
-      const setStatus = {
-        $set: {
-          status: updateStatus.status,
-        },
-      };
+      const updates = req.body;
 
-      const result = await courseData.updateOne(filter, setStatus, option);
-      res.send(result);
+      if (updates.status) {
+        const setStatus = {
+          $set: {
+            status: updates.status,
+          },
+        };
+        const statusResult = await courseData.updateOne(
+          filter,
+          setStatus,
+          option
+        );
+        return res.send(statusResult);
+      } else {
+        const setFeedback = {
+          $set: {
+            feedback: updates.feedback,
+          },
+        };
+        const result = await courseData.updateOne(filter, setFeedback, option);
+        return res.send(result);
+      }
     });
 
     app.put("/updateCourses/:id", verifyJWT, async (req, res) => {
