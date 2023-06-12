@@ -79,7 +79,7 @@ async function run() {
       const result = await courseData.findOne(query);
       res.send(result);
     });
-
+    //admin verify
     app.put("/updateValue/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -148,8 +148,23 @@ async function run() {
     });
 
     //get user data
-    app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
+    app.get("/users", verifyJWT, async (req, res) => {
       const result = await userData.find().toArray();
+      res.send(result);
+    });
+
+    //admin verify
+    app.put("/updateUser/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const option = { upsert: true };
+      const updateUser = req.body;
+      const setUser = {
+        $set: {
+          role: updateUser.role,
+        },
+      };
+      const result = await userData.updateOne(filter, setUser, option);
       res.send(result);
     });
 
