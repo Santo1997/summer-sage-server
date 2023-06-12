@@ -45,7 +45,7 @@ async function run() {
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
-        expiresIn: "5h",
+        expiresIn: "1h",
       });
       res.send({ token });
     });
@@ -61,6 +61,11 @@ async function run() {
     };
 
     //get course data
+    app.get("/allCourses", verifyJWT, async (req, res) => {
+      const result = await courseData.find().toArray();
+      res.send(result);
+    });
+
     app.get("/courses", async (req, res) => {
       let query = { status: "confirm" };
       sortBy = { student_enroll: -1 };
@@ -68,14 +73,29 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/courses/:id", async (req, res) => {
+    app.get("/courses/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await courseData.findOne(query);
       res.send(result);
     });
 
-    app.put("/updateCourses/:id", async (req, res) => {
+    app.put("/updateStatus/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const option = { upsert: true };
+      const updateStatus = req.body;
+      const setStatus = {
+        $set: {
+          status: updateStatus.status,
+        },
+      };
+
+      const result = await courseData.updateOne(filter, setStatus, option);
+      res.send(result);
+    });
+
+    app.put("/updateCourses/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const option = { upsert: true };
@@ -102,7 +122,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/course", async (req, res) => {
+    app.post("/course", verifyJWT, async (req, res) => {
       const newCls = req.body;
       const query = { course_name: newCls.course_name };
       const existingCls = await courseData.findOne(query);
