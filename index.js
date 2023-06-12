@@ -3,6 +3,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.PAYMENT_KEY);
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -40,6 +41,7 @@ async function run() {
     const courseData = client.db("summerCamp").collection("courses");
     const userData = client.db("summerCamp").collection("users");
     const cartData = client.db("summerCamp").collection("carts");
+    const paymentData = client.db("summerCamp").collection("payments");
 
     //jwt access
     app.post("/jwt", (req, res) => {
@@ -79,8 +81,25 @@ async function run() {
       const result = await courseData.findOne(query);
       res.send(result);
     });
+
+    app.put("/updateInfoCourse/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const option = { upsert: true };
+      const updateCls = req.body;
+      const setCls = {
+        $set: {
+          student_enroll: updateCls.student_enroll,
+          available_seats: updateCls.available_seats,
+        },
+      };
+
+      const result = await courseData.updateOne(filter, setCls, option);
+      res.send(result);
+    });
+
     //admin verify
-    app.put("/updateValue/:id", verifyJWT, async (req, res) => {
+    app.put("/updateValue/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const option = { upsert: true };
@@ -148,13 +167,25 @@ async function run() {
     });
 
     //get user data
-    app.get("/users", verifyJWT, async (req, res) => {
+    app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await userData.find().toArray();
       res.send(result);
     });
 
+    //get admin
+    app.get("/author/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        res.send({ admin: false });
+      }
+      const query = { email: email };
+      const user = await userData.findOne(query);
+      const result = { role: user.role };
+      res.send(result);
+    });
+
     //admin verify
-    app.put("/updateUser/:id", verifyJWT, async (req, res) => {
+    app.put("/updateUser/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const option = { upsert: true };
@@ -225,6 +256,32 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const toy = await cartData.deleteOne(query);
       res.send(toy);
+    });
+
+    //payment
+    app.get("/allDayments", verifyJWT, async (req, res) => {
+      const result = await paymentData.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    app.post("/payments", verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const insertResult = await paymentData.insertOne(payment);
+      res.send(insertResult);
     });
 
     //etc
