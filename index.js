@@ -63,7 +63,7 @@ async function run() {
     };
 
     //get course data
-    app.get("/allCourses", verifyJWT, async (req, res) => {
+    app.get("/allCourses", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await courseData.find().toArray();
       res.send(result);
     });
@@ -184,6 +184,14 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/checkRole/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userData.findOne(query);
+      const result = { role: user.role };
+      res.send(result);
+    });
+
     //admin verify
     app.put("/updateUser/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
@@ -228,7 +236,7 @@ async function run() {
     });
 
     // cart data
-    app.post("/cart", async (req, res) => {
+    app.post("/cart", verifyJWT, async (req, res) => {
       const cartItm = req.body;
 
       const query = { langId: cartItm.langId, user: cartItm.user };
@@ -247,11 +255,12 @@ async function run() {
       } else {
         res.send([]);
       }
+
       const results = await cartData.find(query).toArray();
       res.send(results);
     });
 
-    app.delete("/carts/:id", async (req, res) => {
+    app.delete("/carts/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const toy = await cartData.deleteOne(query);
@@ -259,8 +268,17 @@ async function run() {
     });
 
     //payment
-    app.get("/allDayments", verifyJWT, async (req, res) => {
+    app.get("/allpayments", verifyJWT, async (req, res) => {
       const result = await paymentData.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/userpayments", verifyJWT, async (req, res) => {
+      let query = {};
+      if (req.query?.user) {
+        query = { user: req.query.user };
+      }
+      const result = await paymentData.find(query).toArray();
       res.send(result);
     });
 
