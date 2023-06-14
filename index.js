@@ -147,7 +147,6 @@ async function run() {
 
     app.get("/userCourses", verifyJWT, async (req, res) => {
       let query = {};
-      console.log(query);
       if (req.query?.user) {
         query = { "course_teacher.email": req.query.user };
       }
@@ -248,7 +247,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/carts", verifyJWT, async (req, res) => {
+    app.get("/carts", async (req, res) => {
       let query = {};
       if (req.query?.user) {
         query = { user: req.query.user };
@@ -310,29 +309,43 @@ async function run() {
       const payment = await paymentData.find().toArray();
       const revenue = payment.reduce((sum, payment) => sum + payment.price, 0);
       res.send({
-        courses,
-        users,
-        payments,
         revenue,
+        payments,
+        users,
+        courses,
       });
     });
 
     //instractor dashboard
     app.get("/instractor-starts", verifyJWT, async (req, res) => {
-      let query = {};
-      if (req.query?.user) {
-        query = { "course_teacher.email": req.query.user, status: "approved" };
-      }
+      let courseQuery = {
+        "course_teacher.email": req.query.user,
+        status: "approved",
+      };
+      let pendQuery = {
+        "course_teacher.email": req.query.user,
+        status: "pending",
+      };
+      let denyQuery = {
+        "course_teacher.email": req.query.user,
+        status: "denied",
+      };
 
-      const courses = (await courseData.find(query).toArray()).length;
-      const course = await courseData.find(query).toArray();
-      const revenue = course.reduce(
+      const courses = await courseData.find(courseQuery).toArray();
+      const course = (await courseData.find(courseQuery).toArray()).length;
+      const pending = (await courseData.find(pendQuery).toArray()).length;
+      const denied = (await courseData.find(denyQuery).toArray()).length;
+
+      const student = courses.reduce(
         (sum, student) => sum + student.student_enroll,
         0
       );
+
       res.send({
-        courses,
-        revenue,
+        course,
+        student,
+        pending,
+        denied,
       });
     });
 
@@ -344,11 +357,11 @@ async function run() {
       }
       const cart = (await courseData.find(query).toArray()).length;
       const payment = await paymentData.find(query).toArray();
-      const revenue = payment.reduce((sum, payment) => sum + payment.price, 0);
+      const expense = payment.reduce((sum, payment) => sum + payment.price, 0);
       res.send({
-        cart,
+        expense,
         enrolls: payment.length,
-        revenue,
+        cart,
       });
     });
 
