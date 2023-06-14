@@ -274,10 +274,11 @@ async function run() {
 
     app.get("/userpayments", verifyJWT, async (req, res) => {
       let query = {};
+      sortBy = { date: -1 };
       if (req.query?.user) {
         query = { user: req.query.user };
       }
-      const result = await paymentData.find(query).toArray();
+      const result = await paymentData.find(query).sort(sortBy).toArray();
       res.send(result);
     });
 
@@ -355,11 +356,12 @@ async function run() {
       if (req.query?.user) {
         query = { user: req.query.user };
       }
-      const cart = (await courseData.find(query).toArray()).length;
+      const cart = (await cartData.find(query).toArray()).length;
       const payment = await paymentData.find(query).toArray();
       const expense = payment.reduce((sum, payment) => sum + payment.price, 0);
+
       res.send({
-        expense,
+        expense: parseInt(expense.toFixed(2)),
         enrolls: payment.length,
         cart,
       });
