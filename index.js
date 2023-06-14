@@ -302,6 +302,56 @@ async function run() {
       res.send(insertResult);
     });
 
+    //admin dashboard
+    app.get("/admin-starts", verifyJWT, verifyAdmin, async (req, res) => {
+      const courses = await courseData.estimatedDocumentCount();
+      const users = await userData.estimatedDocumentCount();
+      const payments = await paymentData.estimatedDocumentCount();
+      const payment = await paymentData.find().toArray();
+      const revenue = payment.reduce((sum, payment) => sum + payment.price, 0);
+      res.send({
+        courses,
+        users,
+        payments,
+        revenue,
+      });
+    });
+
+    //instractor dashboard
+    app.get("/instractor-starts", verifyJWT, async (req, res) => {
+      let query = {};
+      if (req.query?.user) {
+        query = { "course_teacher.email": req.query.user, status: "approved" };
+      }
+
+      const courses = (await courseData.find(query).toArray()).length;
+      const course = await courseData.find(query).toArray();
+      const revenue = course.reduce(
+        (sum, student) => sum + student.student_enroll,
+        0
+      );
+      res.send({
+        courses,
+        revenue,
+      });
+    });
+
+    //student dashboard
+    app.get("/student-starts", verifyJWT, async (req, res) => {
+      let query = {};
+      if (req.query?.user) {
+        query = { user: req.query.user };
+      }
+      const cart = (await courseData.find(query).toArray()).length;
+      const payment = await paymentData.find(query).toArray();
+      const revenue = payment.reduce((sum, payment) => sum + payment.price, 0);
+      res.send({
+        cart,
+        enrolls: payment.length,
+        revenue,
+      });
+    });
+
     //etc
     await client.db("admin").command({ ping: 1 });
     console.log(
